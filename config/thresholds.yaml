@@ -1,0 +1,12 @@
+disk_thresholds: # disk threshold in % e.g. 90
+  limits:
+    warn: 85
+    crit: 95
+
+cpu_thresholds: # cpu loadavg threshold per CPU e.g. 0.9
+  per_cpu_1min:
+    warn: 1.1
+    crit: 1.7
+  per_cpu_15min:
+    warn: 1.2
+    crit: 2
