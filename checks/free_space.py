@@ -27,7 +27,7 @@ def check_space():
         used_percent = (total - free) / total * 100
 
         if used_percent > crit_value:
-            return f"[CRIT] Disk usage is {used_percent:.2f}%"
+            return f"[CRIT]", f"{used_percent:.2f}%"
         elif used_percent > warn_value:
-            return f"[WARN] Disk usage is {used_percent:.2f}%"
-        return f"[OK] Disk usage is {used_percent:.2f}%"
+            return f"WARN", f"{used_percent:.2f}%"
+        return f"OK", f"{used_percent:.2f}%"

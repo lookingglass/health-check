@@ -1,0 +1,7 @@
+endpoints:
+  - "host": "example.com"
+    "port": 443
+  - "host": "google.com"
+    "port": 443
+  - "host": "fakewebistetote.st"
+    "port": 443

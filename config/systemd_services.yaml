@@ -1,1 +1,4 @@
-# todo
+services:
+  - docker.service
+  - fake.service
+  - gitlab-runner.service

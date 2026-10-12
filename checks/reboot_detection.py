@@ -14,9 +14,8 @@ def check_reboot_detected():
         saved = f.read().strip()
 
     with open(STATE_FILE, 'w') as f:
-        f.write(current)
+        f.write(current.strip())
 
     if saved != current:
-        print("reboot detected")
         return True
     return False
