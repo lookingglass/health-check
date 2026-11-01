@@ -1,11 +1,12 @@
+import os
 import ssl
 import socket
 
 from datetime import datetime
 
+import yaml
 
-WARN_DAYS_LEFT = 14
-CRIT_DAYS_LEFT = 7
+project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def ssl_check(domain: str, port: int):
@@ -23,9 +24,14 @@ def ssl_check(domain: str, port: int):
                 expires = datetime.strptime(ssl_data["expires"], "%Y-%m-%d")
                 days_left = (expires - datetime.now()).days
 
-                if days_left < CRIT_DAYS_LEFT:
+                with open(f'{project_dir}/config/endpoints.yaml') as fd:
+                    limits = yaml.safe_load(fd)
+                    warn_value = limits["settings"]["ssl"]["warn_days"]
+                    crit_value = limits["settings"]["ssl"]["crit_days"]
+
+                if days_left < crit_value:
                     return {"status": "CRIT", "days_left": days_left}
-                if days_left < WARN_DAYS_LEFT:
+                if days_left < warn_value:
                     return {"status": "WARN", "days_left": days_left}
                 else:
                     return {"status": "OK"}

@@ -1,3 +1,9 @@
+settings:
+  ssl:
+    warn_days: 14
+    crit_days: 7
+
+
 endpoints:
   - "host": "example.com"
     "port": 443
