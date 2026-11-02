@@ -2,12 +2,18 @@ settings:
   ssl:
     warn_days: 14
     crit_days: 7
-
+  http:
+    timeout: 5
+    follow_redirects: true
 
 endpoints:
-  - "host": "example.com"
-    "port": 443
-  - "host": "google.com"
-    "port": 443
-  - "host": "fakewebistetote.st"
-    "port": 443
+  - host: "example.com"
+    port: 443
+    checks:
+      - type: "status_code"
+        expected: [200, 301, 302]
+      - type: "ssl"
+  - host: "google.com"
+    port: 443
+    checks:
+      - type: "ssl"
