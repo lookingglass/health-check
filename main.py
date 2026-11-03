@@ -3,59 +3,66 @@ import os
 
 import yaml
 
-from checks import systemd, loadavg, free_space, reboot_detection, ssl_check
+from checks import systemd, loadavg, free_space, reboot_detection, ssl_check, get_status_code, memory, check_oom
 
-project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-with open('./state/instance.txt', 'r') as f:
-    instance = f.read()
+with open(os.path.join(PROJECT_DIR, "state", "instance.txt")) as f:
+    instance = f.read().strip()
 
-load_average_status, load_average_1min, cpu_count = loadavg.get_values()
+with open(os.path.join(PROJECT_DIR, "config", "systemd_services.yaml")) as f:
+    services = yaml.safe_load(f)["services"]
 
-load_average = {
-    "status": load_average_status,
-    "1min_per_core": f"{load_average_1min / cpu_count:.2f}",
-    "1min_total": f"{load_average_1min:.2f}",
-}
+with open(os.path.join(PROJECT_DIR, "config", "endpoints.yaml")) as f:
+    config = yaml.safe_load(f)
 
-disk_space_status, disk_space_used = free_space.check_space()
-disk_status = {
-    "status": disk_space_status,
-    "space_used": disk_space_used,
-}
-reboot_detected = reboot_detection.check_reboot_detected()
+endpoints = config.get("endpoints", [])
 
+load_status, load_1min, cpu_count = loadavg.get_values()
+disk_status, disk_used = free_space.check_space()
+mem_status, mem_available = memory.check_memory()
 
-def check_services():
-    result = {}
+ssl_certs = {}
+status_codes = {}
 
-    with open(f'./config/systemd_services.yaml') as fd:
-        services = yaml.safe_load(fd)
-
-    for service in services["services"]:
-        is_active = systemd.is_active(service)
-        result[service] = {
-            "status": "OK" if is_active else "FAIL",
-        }
-    return result
-
-
-with open(f'./config/endpoints.yaml') as endpoint:
-    endpoints = yaml.safe_load(endpoint)
-
-endpoint_checks = {}
-for endpoint in endpoints["endpoints"]:
+for endpoint in endpoints:
     host = endpoint["host"]
-    port = endpoint["port"]
+    port = endpoint.get("port", 443)
 
-    endpoint_checks[host] = ssl_check(host, port)
+    for check in endpoint.get("checks", []):
+        check_type = check["type"]
+
+        if check_type == "ssl":
+            ssl_certs[host] = ssl_check(host, port)
+
+        elif check_type == "status_code":
+            get_status_code(host, port, expected=check.get("expected"))
 
 report = {
     "instance": instance,
-    "services": {"systemd_services": check_services(), "ssl_certs": endpoint_checks, },
-    "reboot_detected": reboot_detected,
-    "disk_usage": disk_status,
-    "load_average": load_average,
+    "services": {
+        "systemd_services": {
+            name: {"status": "OK" if systemd.is_active(name) else "FAIL"}
+            for name in services
+        },
+        "ssl_certs": ssl_certs,
+        "status_codes": status_codes,
+    },
+    "reboot_detected": reboot_detection.check_reboot_detected(),
+    "memory" : {
+        "status": mem_status,
+        "usage": mem_available
+
+    },
+    "disk_usage": {
+        "status": disk_status,
+        "space_used": disk_used
+    },
+    "load_average": {
+        "status": load_status,
+        "1min_per_core": f"{load_1min / cpu_count:.2f}",
+        "1min_total": f"{load_1min:.2f}",
+    },
 }
-result = json.dumps(report)
-print(result)
+
+print(json.dumps(report))
