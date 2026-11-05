@@ -1,0 +1,5 @@
+# Fedora log file
+log_file: /var/log/messages
+
+# Debian/Ubuntu log file
+# log_file: /var/log/syslog
